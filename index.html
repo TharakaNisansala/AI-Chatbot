@@ -1,0 +1,850 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Advanced Gemini Chatbot</title>
+    <style>
+        :root {
+            --primary-color: #4285f4;
+            --secondary-color: #34a853;
+            --accent-color: #ea4335;
+            --light-color: #f8f9fa;
+            --dark-color: #202124;
+            --gray-color: #5f6368;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background-color: #f5f5f5;
+            color: var(--dark-color);
+            line-height: 1.6;
+        }
+
+        .chat-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: flex;
+            height: 100vh;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
+            background-color: white;
+        }
+
+        .sidebar {
+            width: 300px;
+            background-color: var(--dark-color);
+            color: white;
+            padding: 20px;
+            overflow-y: auto;
+            border-right: 1px solid #3c4043;
+        }
+
+        .sidebar-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 30px;
+        }
+
+        .sidebar-header h2 {
+            margin-left: 10px;
+            font-size: 1.5rem;
+        }
+
+        .logo {
+            width: 40px;
+            height: 40px;
+            background-color: var(--primary-color);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 1.2rem;
+        }
+
+        .new-chat-btn {
+            width: 100%;
+            padding: 12px;
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-bottom: 20px;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background-color 0.3s;
+        }
+
+        .new-chat-btn:hover {
+            background-color: #3367d6;
+        }
+
+        .new-chat-btn i {
+            margin-right: 8px;
+        }
+
+        .chat-history {
+            margin-top: 20px;
+        }
+
+        .chat-history-item {
+            padding: 10px;
+            border-radius: 5px;
+            margin-bottom: 5px;
+            cursor: pointer;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            transition: background-color 0.3s;
+        }
+
+        .chat-history-item:hover {
+            background-color: #3c4043;
+        }
+
+        .chat-main {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+        }
+
+        .chat-header {
+            padding: 20px;
+            border-bottom: 1px solid #e0e0e0;
+            display: flex;
+            align-items: center;
+        }
+
+        .chat-header h2 {
+            font-size: 1.3rem;
+        }
+
+        .chat-messages {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+            background-color: #f9f9f9;
+        }
+
+        .message {
+            margin-bottom: 20px;
+            max-width: 80%;
+            padding: 15px;
+            border-radius: 8px;
+            position: relative;
+            animation: fadeIn 0.3s ease-in-out;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .user-message {
+            background-color: var(--primary-color);
+            color: white;
+            margin-left: auto;
+            border-bottom-right-radius: 0;
+        }
+
+        .bot-message {
+            background-color: white;
+            border: 1px solid #e0e0e0;
+            margin-right: auto;
+            border-bottom-left-radius: 0;
+        }
+
+        .message-time {
+            font-size: 0.7rem;
+            opacity: 0.7;
+            margin-top: 5px;
+            display: block;
+            text-align: right;
+        }
+
+        .chat-input-container {
+            padding: 15px;
+            border-top: 1px solid #e0e0e0;
+            background-color: white;
+        }
+
+        .input-wrapper {
+            display: flex;
+            align-items: center;
+            background-color: #f1f3f4;
+            border-radius: 25px;
+            padding: 5px 15px;
+        }
+
+        .chat-input {
+            flex: 1;
+            border: none;
+            background: transparent;
+            padding: 12px;
+            font-size: 1rem;
+            outline: none;
+            resize: none;
+            max-height: 150px;
+            overflow-y: auto;
+        }
+
+        .file-input-label {
+            cursor: pointer;
+            margin-right: 10px;
+            color: var(--gray-color);
+            transition: color 0.3s;
+        }
+
+        .file-input-label:hover {
+            color: var(--primary-color);
+        }
+
+        .file-input {
+            display: none;
+        }
+
+        .send-btn {
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background-color 0.3s;
+        }
+
+        .send-btn:hover {
+            background-color: #3367d6;
+        }
+
+        .send-btn:disabled {
+            background-color: #cccccc;
+            cursor: not-allowed;
+        }
+
+        .attachments-preview {
+            display: flex;
+            padding: 10px 0;
+            overflow-x: auto;
+            gap: 10px;
+        }
+
+        .attachment-item {
+            position: relative;
+            width: 100px;
+            height: 100px;
+            border-radius: 5px;
+            overflow: hidden;
+            background-color: #f1f3f4;
+        }
+
+        .attachment-preview {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .attachment-remove {
+            position: absolute;
+            top: 5px;
+            right: 5px;
+            background-color: var(--accent-color);
+            color: white;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-size: 0.7rem;
+        }
+
+        .typing-indicator {
+            display: flex;
+            padding: 15px;
+            background-color: white;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            margin-right: auto;
+            margin-bottom: 20px;
+            max-width: 80%;
+            border-bottom-left-radius: 0;
+        }
+
+        .typing-dot {
+            width: 8px;
+            height: 8px;
+            background-color: var(--gray-color);
+            border-radius: 50%;
+            margin: 0 2px;
+            animation: typingAnimation 1.4s infinite ease-in-out;
+        }
+
+        .typing-dot:nth-child(1) {
+            animation-delay: 0s;
+        }
+
+        .typing-dot:nth-child(2) {
+            animation-delay: 0.2s;
+        }
+
+        .typing-dot:nth-child(3) {
+            animation-delay: 0.4s;
+        }
+
+        @keyframes typingAnimation {
+            0%, 60%, 100% { transform: translateY(0); }
+            30% { transform: translateY(-5px); }
+        }
+
+        .model-info {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+            font-size: 0.8rem;
+            color: var(--gray-color);
+        }
+
+        @media (max-width: 768px) {
+            .chat-container {
+                flex-direction: column;
+                height: auto;
+                min-height: 100vh;
+            }
+
+            .sidebar {
+                width: 100%;
+                height: auto;
+                border-right: none;
+                border-bottom: 1px solid #3c4043;
+            }
+
+            .chat-main {
+                height: calc(100vh - 200px);
+            }
+
+            .message {
+                max-width: 90%;
+            }
+        }
+    </style>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+</head>
+<body>
+    <div class="chat-container">
+        <div class="sidebar">
+            <div class="sidebar-header">
+                <div class="logo">G</div>
+                <h2>Gemini Chat</h2>
+            </div>
+            <button class="new-chat-btn" id="newChatBtn">
+                <i class="fas fa-plus"></i> New Chat
+            </button>
+            <div class="chat-history">
+                <h3>Chat History</h3>
+                <div id="chatHistoryList">
+                    <!-- Chat history items will be added here dynamically -->
+                </div>
+            </div>
+        </div>
+        <div class="chat-main">
+            <div class="chat-header">
+                <h2 id="currentChatTitle">New Chat</h2>
+            </div>
+            <div class="chat-messages" id="chatMessages">
+                <!-- Messages will be added here dynamically -->
+                <div class="welcome-message">
+                    <div class="message bot-message">
+                        <p>Hello! I'm Gemini, your AI assistant. How can I help you today?</p>
+                        <span class="message-time">Just now</span>
+                    </div>
+                    <div class="message bot-message">
+                        <p>You can ask me anything, or even upload files (images, PDFs, etc.) for me to analyze.</p>
+                        <span class="message-time">Just now</span>
+                    </div>
+                </div>
+            </div>
+            <div class="chat-input-container">
+                <div class="attachments-preview" id="attachmentsPreview">
+                    <!-- Attachments preview will be shown here -->
+                </div>
+                <div class="input-wrapper">
+                    <label for="fileInput" class="file-input-label">
+                        <i class="fas fa-paperclip"></i>
+                    </label>
+                    <input type="file" id="fileInput" class="file-input" multiple>
+                    <textarea class="chat-input" id="chatInput" placeholder="Type your message..." rows="1"></textarea>
+                    <button class="send-btn" id="sendBtn" disabled>
+                        <i class="fas fa-paper-plane"></i>
+                    </button>
+                </div>
+            </div>
+            <div class="model-info">
+                Powered by Gemini API
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // API Configuration
+        const API_KEY = 'AIzaSyBZdalMsUQ-ZIMRfRTJt4dNToU69IXYvRk';
+        const API_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent';
+
+        // DOM Elements
+        const chatInput = document.getElementById('chatInput');
+        const sendBtn = document.getElementById('sendBtn');
+        const chatMessages = document.getElementById('chatMessages');
+        const fileInput = document.getElementById('fileInput');
+        const attachmentsPreview = document.getElementById('attachmentsPreview');
+        const newChatBtn = document.getElementById('newChatBtn');
+        const chatHistoryList = document.getElementById('chatHistoryList');
+        const currentChatTitle = document.getElementById('currentChatTitle');
+
+        // State
+        let currentChatId = Date.now().toString();
+        let chats = JSON.parse(localStorage.getItem('geminiChats')) || {};
+        let attachments = [];
+        let isTyping = false;
+
+        // Initialize
+        function init() {
+            loadChatHistory();
+            setupEventListeners();
+            autoResizeTextarea();
+        }
+
+        // Event Listeners
+        function setupEventListeners() {
+            // Send message on button click
+            sendBtn.addEventListener('click', sendMessage);
+            
+            // Send message on Enter key (but allow Shift+Enter for new lines)
+            chatInput.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    sendMessage();
+                }
+            });
+            
+            // Enable/disable send button based on input
+            chatInput.addEventListener('input', () => {
+                sendBtn.disabled = chatInput.value.trim() === '' && attachments.length === 0;
+            });
+            
+            // Handle file uploads
+            fileInput.addEventListener('change', handleFileUpload);
+            
+            // New chat button
+            newChatBtn.addEventListener('click', startNewChat);
+        }
+
+        // Auto-resize textarea as user types
+        function autoResizeTextarea() {
+            chatInput.addEventListener('input', function() {
+                this.style.height = 'auto';
+                this.style.height = (this.scrollHeight) + 'px';
+            });
+        }
+
+        // Handle file upload
+        function handleFileUpload(e) {
+            const files = Array.from(e.target.files);
+            if (files.length === 0) return;
+            
+            files.forEach(file => {
+                if (file.size > 5 * 1024 * 1024) { // 5MB limit
+                    alert(`File ${file.name} is too large. Maximum size is 5MB.`);
+                    return;
+                }
+                
+                const reader = new FileReader();
+                reader.onload = (event) => {
+                    attachments.push({
+                        name: file.name,
+                        type: file.type,
+                        data: event.target.result
+                    });
+                    renderAttachmentsPreview();
+                    sendBtn.disabled = chatInput.value.trim() === '' && attachments.length === 0;
+                };
+                reader.readAsDataURL(file);
+            });
+            
+            // Reset file input to allow selecting the same file again
+            fileInput.value = '';
+        }
+
+        // Render attachments preview
+        function renderAttachmentsPreview() {
+            attachmentsPreview.innerHTML = '';
+            
+            attachments.forEach((attachment, index) => {
+                const attachmentItem = document.createElement('div');
+                attachmentItem.className = 'attachment-item';
+                
+                if (attachment.type.startsWith('image/')) {
+                    const img = document.createElement('img');
+                    img.src = attachment.data;
+                    img.className = 'attachment-preview';
+                    attachmentItem.appendChild(img);
+                } else {
+                    const icon = document.createElement('div');
+                    icon.className = 'attachment-preview';
+                    icon.style.display = 'flex';
+                    icon.style.alignItems = 'center';
+                    icon.style.justifyContent = 'center';
+                    icon.style.fontSize = '2rem';
+                    icon.style.color = '#5f6368';
+                    
+                    if (attachment.type.includes('pdf')) {
+                        icon.innerHTML = '<i class="fas fa-file-pdf"></i>';
+                    } else if (attachment.type.includes('word') || attachment.type.includes('document')) {
+                        icon.innerHTML = '<i class="fas fa-file-word"></i>';
+                    } else if (attachment.type.includes('excel') || attachment.type.includes('spreadsheet')) {
+                        icon.innerHTML = '<i class="fas fa-file-excel"></i>';
+                    } else if (attachment.type.includes('powerpoint') || attachment.type.includes('presentation')) {
+                        icon.innerHTML = '<i class="fas fa-file-powerpoint"></i>';
+                    } else if (attachment.type.includes('zip') || attachment.type.includes('compressed')) {
+                        icon.innerHTML = '<i class="fas fa-file-archive"></i>';
+                    } else {
+                        icon.innerHTML = '<i class="fas fa-file"></i>';
+                    }
+                    
+                    const fileName = document.createElement('div');
+                    fileName.style.position = 'absolute';
+                    fileName.style.bottom = '5px';
+                    fileName.style.left = '0';
+                    fileName.style.right = '0';
+                    fileName.style.textAlign = 'center';
+                    fileName.style.fontSize = '0.7rem';
+                    fileName.style.padding = '0 5px';
+                    fileName.style.whiteSpace = 'nowrap';
+                    fileName.style.overflow = 'hidden';
+                    fileName.style.textOverflow = 'ellipsis';
+                    fileName.textContent = attachment.name;
+                    
+                    attachmentItem.appendChild(icon);
+                    attachmentItem.appendChild(fileName);
+                }
+                
+                const removeBtn = document.createElement('div');
+                removeBtn.className = 'attachment-remove';
+                removeBtn.innerHTML = '<i class="fas fa-times"></i>';
+                removeBtn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    attachments.splice(index, 1);
+                    renderAttachmentsPreview();
+                    sendBtn.disabled = chatInput.value.trim() === '' && attachments.length === 0;
+                });
+                
+                attachmentItem.appendChild(removeBtn);
+                attachmentsPreview.appendChild(attachmentItem);
+            });
+        }
+
+        // Send message to Gemini API
+        async function sendMessage() {
+            const message = chatInput.value.trim();
+            if (message === '' && attachments.length === 0) return;
+            
+            // Add user message to chat
+            addMessageToChat('user', message, attachments);
+            
+            // Clear input and attachments
+            chatInput.value = '';
+            chatInput.style.height = 'auto';
+            attachments = [];
+            renderAttachmentsPreview();
+            sendBtn.disabled = true;
+            
+            // Show typing indicator
+            showTypingIndicator();
+            
+            try {
+                // Prepare the request to Gemini API
+                let requestBody;
+                
+                if (attachments.length > 0) {
+                    // For multi-modal requests (text + images)
+                    const parts = [];
+                    
+                    if (message) {
+                        parts.push({ text: message });
+                    }
+                    
+                    attachments.forEach(attachment => {
+                        if (attachment.type.startsWith('image/')) {
+                            // Extract base64 data (remove data:image/...;base64, prefix)
+                            const base64Data = attachment.data.split(',')[1];
+                            parts.push({
+                                inlineData: {
+                                    mimeType: attachment.type,
+                                    data: base64Data
+                                }
+                            });
+                        }
+                    });
+                    
+                    requestBody = {
+                        contents: [{
+                            parts: parts
+                        }]
+                    };
+                    
+                    // Use the multi-modal model if there are images
+                    const response = await fetch(`${API_URL}?key=${API_KEY}`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify(requestBody)
+                    });
+                    
+                    const data = await response.json();
+                    
+                    if (data.candidates && data.candidates[0].content.parts) {
+                        const botResponse = data.candidates[0].content.parts[0].text;
+                        addMessageToChat('bot', botResponse);
+                    } else {
+                        throw new Error('Invalid response format from API');
+                    }
+                } else {
+                    // For text-only requests
+                    requestBody = {
+                        contents: [{
+                            parts: [{ text: message }]
+                        }]
+                    };
+                    
+                    const response = await fetch(`${API_URL}?key=${API_KEY}`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify(requestBody)
+                    });
+                    
+                    const data = await response.json();
+                    
+                    if (data.candidates && data.candidates[0].content.parts) {
+                        const botResponse = data.candidates[0].content.parts[0].text;
+                        addMessageToChat('bot', botResponse);
+                    } else {
+                        throw new Error('Invalid response format from API');
+                    }
+                }
+            } catch (error) {
+                console.error('Error calling Gemini API:', error);
+                addMessageToChat('bot', `Sorry, I encountered an error: ${error.message}`);
+            } finally {
+                // Hide typing indicator
+                hideTypingIndicator();
+                
+                // Save chat to history
+                saveChatToHistory();
+            }
+        }
+
+        // Add message to chat UI
+        function addMessageToChat(role, content, files = []) {
+            // Create message element
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${role}-message`;
+            
+            // Add content
+            const contentPara = document.createElement('p');
+            contentPara.innerHTML = content.replace(/\n/g, '<br>');
+            messageDiv.appendChild(contentPara);
+            
+            // Add file previews if any
+            if (files.length > 0) {
+                const filesContainer = document.createElement('div');
+                filesContainer.style.marginTop = '10px';
+                filesContainer.style.display = 'flex';
+                filesContainer.style.flexWrap = 'wrap';
+                filesContainer.style.gap = '10px';
+                
+                files.forEach(file => {
+                    if (file.type.startsWith('image/')) {
+                        const img = document.createElement('img');
+                        img.src = file.data;
+                        img.style.maxWidth = '200px';
+                        img.style.maxHeight = '200px';
+                        img.style.borderRadius = '5px';
+                        filesContainer.appendChild(img);
+                    } else {
+                        const fileDiv = document.createElement('div');
+                        fileDiv.style.display = 'flex';
+                        fileDiv.style.alignItems = 'center';
+                        fileDiv.style.gap = '5px';
+                        fileDiv.style.padding = '5px 10px';
+                        fileDiv.style.backgroundColor = 'rgba(0, 0, 0, 0.1)';
+                        fileDiv.style.borderRadius = '5px';
+                        
+                        let iconClass = 'fa-file';
+                        if (file.type.includes('pdf')) iconClass = 'fa-file-pdf';
+                        else if (file.type.includes('word')) iconClass = 'fa-file-word';
+                        else if (file.type.includes('excel')) iconClass = 'fa-file-excel';
+                        else if (file.type.includes('powerpoint')) iconClass = 'fa-file-powerpoint';
+                        else if (file.type.includes('zip')) iconClass = 'fa-file-archive';
+                        
+                        fileDiv.innerHTML = `
+                            <i class="fas ${iconClass}" style="color: #5f6368;"></i>
+                            <span style="font-size: 0.8rem;">${file.name}</span>
+                        `;
+                        
+                        filesContainer.appendChild(fileDiv);
+                    }
+                });
+                
+                messageDiv.appendChild(filesContainer);
+            }
+            
+            // Add timestamp
+            const timeSpan = document.createElement('span');
+            timeSpan.className = 'message-time';
+            timeSpan.textContent = formatTime(new Date());
+            messageDiv.appendChild(timeSpan);
+            
+            // Add to chat
+            chatMessages.appendChild(messageDiv);
+            
+            // Scroll to bottom
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+            
+            // Add to chat history in memory
+            if (!chats[currentChatId]) {
+                chats[currentChatId] = {
+                    id: currentChatId,
+                    title: content.length > 30 ? content.substring(0, 30) + '...' : content,
+                    messages: []
+                };
+            }
+            
+            chats[currentChatId].messages.push({
+                role,
+                content,
+                files,
+                timestamp: new Date().toISOString()
+            });
+            
+            // Update chat title if it's the first message
+            if (chats[currentChatId].messages.length === 1) {
+                currentChatTitle.textContent = chats[currentChatId].title;
+            }
+        }
+
+        // Show typing indicator
+        function showTypingIndicator() {
+            if (isTyping) return;
+            
+            isTyping = true;
+            
+            const typingDiv = document.createElement('div');
+            typingDiv.className = 'typing-indicator';
+            typingDiv.id = 'typingIndicator';
+            
+            for (let i = 0; i < 3; i++) {
+                const dot = document.createElement('div');
+                dot.className = 'typing-dot';
+                typingDiv.appendChild(dot);
+            }
+            
+            chatMessages.appendChild(typingDiv);
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+
+        // Hide typing indicator
+        function hideTypingIndicator() {
+            isTyping = false;
+            const typingIndicator = document.getElementById('typingIndicator');
+            if (typingIndicator) {
+                typingIndicator.remove();
+            }
+        }
+
+        // Format time
+        function formatTime(date) {
+            return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        }
+
+        // Save chat to history
+        function saveChatToHistory() {
+            localStorage.setItem('geminiChats', JSON.stringify(chats));
+            loadChatHistory();
+        }
+
+        // Load chat history
+        function loadChatHistory() {
+            chatHistoryList.innerHTML = '';
+            
+            const chatIds = Object.keys(chats).sort((a, b) => {
+                return new Date(chats[b].messages[0].timestamp) - new Date(chats[a].messages[0].timestamp);
+            });
+            
+            chatIds.forEach(chatId => {
+                const chat = chats[chatId];
+                const chatItem = document.createElement('div');
+                chatItem.className = 'chat-history-item';
+                chatItem.textContent = chat.title;
+                chatItem.addEventListener('click', () => loadChat(chatId));
+                chatHistoryList.appendChild(chatItem);
+            });
+        }
+
+        // Load a specific chat
+        function loadChat(chatId) {
+            currentChatId = chatId;
+            const chat = chats[chatId];
+            
+            // Clear current chat
+            chatMessages.innerHTML = '';
+            currentChatTitle.textContent = chat.title;
+            
+            // Load messages
+            chat.messages.forEach(msg => {
+                addMessageToChat(msg.role, msg.content, msg.files || []);
+            });
+            
+            // Scroll to bottom
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+
+        // Start a new chat
+        function startNewChat() {
+            currentChatId = Date.now().toString();
+            chatMessages.innerHTML = `
+                <div class="welcome-message">
+                    <div class="message bot-message">
+                        <p>Hello! I'm Gemini, your AI assistant. How can I help you today?</p>
+                        <span class="message-time">Just now</span>
+                    </div>
+                    <div class="message bot-message">
+                        <p>You can ask me anything, or even upload files (images, PDFs, etc.) for me to analyze.</p>
+                        <span class="message-time">Just now</span>
+                    </div>
+                </div>
+            `;
+            currentChatTitle.textContent = 'New Chat';
+        }
+
+        // Initialize the app
+        init();
+    </script>
+</body>
+</html>
